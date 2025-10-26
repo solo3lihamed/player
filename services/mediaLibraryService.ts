@@ -37,31 +37,85 @@ const SAMPLE_MEDIA: MediaItem[] = [
 ];
 
 export class MediaLibraryService {
+  private customMedia: MediaItem[] = [];
+  private customFolderPath: string | null = null;
+
   async requestPermissions() {
     return true;
   }
 
-  async getAudioFiles(): Promise<MediaItem[]> {
+  addCustomFile(uri: string, title: string) {
+    const id = `custom-${Date.now()}-${Math.random()}`;
+    const isAudio = uri.toLowerCase().match(/\.(mp3|wav|m4a|aac|flac|ogg)$/);
+    const isVideo = uri.toLowerCase().match(/\.(mp4|mkv|avi|mov|flv|wmv|webm)$/);
+
+    if (isAudio || isVideo) {
+      const mediaItem: MediaItem = {
+        id,
+        uri,
+        title: title || 'Unknown',
+        type: isAudio ? 'audio' : 'video',
+        duration: undefined,
+      };
+
+      this.customMedia.push(mediaItem);
+      return mediaItem;
+    }
+    return null;
+  }
+
+  setCustomFolderPath(path: string) {
+    this.customFolderPath = path;
+  }
+
+  getCustomFolderPath() {
+    return this.customFolderPath;
+  }
+
+  getCustomMedia() {
+    return this.customMedia;
+  }
+
+  clearCustomMedia() {
+    this.customMedia = [];
+    this.customFolderPath = null;
+  }
+
+  async getAudioFiles(includeCustom = true): Promise<MediaItem[]> {
     try {
-      return SAMPLE_MEDIA.filter(m => m.type === 'audio');
+      let allAudio = SAMPLE_MEDIA.filter(m => m.type === 'audio');
+      if (includeCustom) {
+        const customAudio = this.customMedia.filter(m => m.type === 'audio');
+        allAudio = [...customAudio, ...allAudio];
+      }
+      return allAudio;
     } catch (error) {
       console.error('Error getting audio files:', error);
       return [];
     }
   }
 
-  async getVideoFiles(): Promise<MediaItem[]> {
+  async getVideoFiles(includeCustom = true): Promise<MediaItem[]> {
     try {
-      return SAMPLE_MEDIA.filter(m => m.type === 'video');
+      let allVideo = SAMPLE_MEDIA.filter(m => m.type === 'video');
+      if (includeCustom) {
+        const customVideo = this.customMedia.filter(m => m.type === 'video');
+        allVideo = [...customVideo, ...allVideo];
+      }
+      return allVideo;
     } catch (error) {
       console.error('Error getting video files:', error);
       return [];
     }
   }
 
-  async getAllMedia(): Promise<MediaItem[]> {
+  async getAllMedia(includeCustom = true): Promise<MediaItem[]> {
     try {
-      return SAMPLE_MEDIA;
+      let allMedia = [...SAMPLE_MEDIA];
+      if (includeCustom) {
+        allMedia = [...this.customMedia, ...allMedia];
+      }
+      return allMedia;
     } catch (error) {
       console.error('Error getting media:', error);
       return [];
